@@ -17,6 +17,7 @@ package com.google.gerrit.common.data;
 import com.google.gerrit.common.audit.Audit;
 import com.google.gerrit.common.auth.SignInRequired;
 import com.google.gerrit.reviewdb.client.Account;
+import com.google.gerrit.reviewdb.client.AccountCvsCredentials;
 import com.google.gerrit.reviewdb.client.AccountExternalId;
 import com.google.gerrit.reviewdb.client.AccountSshKey;
 import com.google.gerrit.reviewdb.client.ContactInformation;
@@ -82,4 +83,12 @@ public interface AccountSecurity extends RemoteJsonService {
   @Audit
   @SignInRequired
   void validateEmail(String token, AsyncCallback<VoidResult> callback);
+
+  @Audit
+  @SignInRequired
+  void myCvsCredentials(AsyncCallback<AccountCvsCredentials> callback);
+
+  @Audit
+  @SignInRequired
+  void changeCvsCredentials(String CvsUser, String SshPrivateKey, AsyncCallback<AccountCvsCredentials> callback);
 }

@@ -56,6 +56,9 @@ public interface ReviewDb extends Schema {
   @Relation(id = 8)
   AccountSshKeyAccess accountSshKeys();
 
+  @Relation(id = 9)
+  AccountCvsCredentialsAccess accountCvsCredentials();
+
   @Relation(id = 10)
   AccountGroupAccess accountGroups();
 

@@ -35,6 +35,7 @@ public abstract class SettingsScreen extends MenuScreen {
     if (Gerrit.getConfig().isUseContributorAgreements()) {
       link(Util.C.tabAgreements(), PageLinks.SETTINGS_AGREEMENTS);
     }
+    link(Util.C.tabCvs(), PageLinks.SETTINGS_CVS);
   }
 
   @Override

@@ -64,6 +64,10 @@ enum CommitMergeStatus {
                   + "\n"
                   + "Please rebase the change locally and upload again for review."),
 
+  NO_CVS_CREDENTIALS("Target branch is strictly following CVS branch with the same name.\n"
+                  + "When you submit changes to this branch they are also committed to CVS.\n"
+                  + "Submitter should configure CVS username and Key in gerrit acount options CVS Integration section."),
+
   /** */
   INVALID_PROJECT_CONFIGURATION("Change contains an invalid project configuration."),
 

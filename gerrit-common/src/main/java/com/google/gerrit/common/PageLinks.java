@@ -33,6 +33,7 @@ public class PageLinks {
   public static final String SETTINGS_CONTACT = "/settings/contact";
   public static final String SETTINGS_PROJECTS = "/settings/projects";
   public static final String SETTINGS_NEW_AGREEMENT = "/settings/new-agreement";
+  public static final String SETTINGS_CVS = "/settings/cvs";
   public static final String REGISTER = "/register";
 
   public static final String TOP = "n,z";

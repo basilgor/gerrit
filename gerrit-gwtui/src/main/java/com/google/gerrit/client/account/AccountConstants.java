@@ -43,6 +43,7 @@ public interface AccountConstants extends Constants {
   String tabWebIdentities();
   String tabMyGroups();
   String tabAgreements();
+  String tabCvs();
 
   String buttonShowAddSshKey();
   String buttonCloseAddSshKey();
@@ -130,6 +131,9 @@ public interface AccountConstants extends Constants {
   String newAgreementIAGREE();
   String newAgreementAlreadySubmitted();
   String buttonSubmitNewAgreement();
+
+  String cvsLogin();
+  String cvsPrivateKey();
 
   String welcomeToGerritCodeReview();
   String welcomeReviewContact();

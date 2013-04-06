@@ -16,16 +16,24 @@ package com.google.gerrit.httpd.rpc.account;
 
 import com.google.common.base.Strings;
 import com.google.gerrit.common.ChangeHooks;
+import com.google.gerrit.common.audit.Audit;
+import com.google.gerrit.common.auth.SignInRequired;
 import com.google.gerrit.common.data.AccountSecurity;
 import com.google.gerrit.common.data.ContributorAgreement;
 import com.google.gerrit.common.errors.ContactInformationStoreException;
 import com.google.gerrit.common.errors.EmailException;
 import com.google.gerrit.common.errors.InvalidSshKeyException;
+import com.google.gerrit.common.errors.InvalidSshPrivateKeyException;
+import com.google.gerrit.common.errors.InvalidUserNameException;
 import com.google.gerrit.common.errors.NoSuchEntityException;
 import com.google.gerrit.common.errors.PermissionDeniedException;
 import com.google.gerrit.httpd.rpc.BaseServiceImplementation;
 import com.google.gerrit.httpd.rpc.Handler;
+import com.google.gerrit.httpd.rpc.BaseServiceImplementation.Action;
+import com.google.gerrit.httpd.rpc.BaseServiceImplementation.Failure;
 import com.google.gerrit.reviewdb.client.Account;
+import com.google.gerrit.reviewdb.client.AccountCvsCredentials;
+import com.google.gerrit.reviewdb.client.AccountDiffPreference;
 import com.google.gerrit.reviewdb.client.AccountExternalId;
 import com.google.gerrit.reviewdb.client.AccountGroup;
 import com.google.gerrit.reviewdb.client.AccountGroupMember;
@@ -58,12 +66,14 @@ import com.google.gwtorm.server.OrmException;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 class AccountSecurityImpl extends BaseServiceImplementation implements
     AccountSecurity {
@@ -343,5 +353,43 @@ class AccountSecurityImpl extends BaseServiceImplementation implements
     } catch (AccountException e) {
       callback.onFailure(e);
     }
+  }
+
+  public void myCvsCredentials(AsyncCallback<AccountCvsCredentials> callback) {
+    final Account.Id currentUser = user.get().getAccountId();
+    run(callback, new Action<AccountCvsCredentials>() {
+      @Override
+      public AccountCvsCredentials run(ReviewDb db) throws OrmException {
+        try {
+          return db.accountCvsCredentials().get(currentUser);
+        } catch (OrmException e) {
+          return new AccountCvsCredentials(currentUser,
+              "enter you cvs username",
+              "paste your private ssh key for cvs here");
+        }
+      }
+    });
+  }
+
+  public void changeCvsCredentials(final String cvsUser, final String sshPrivateKey,
+      AsyncCallback<AccountCvsCredentials> callback) {
+      final Pattern USER_NAME_PATTERN = Pattern.compile(Account.USER_NAME_PATTERN);
+
+      run(callback, new Action<AccountCvsCredentials>() {
+        public AccountCvsCredentials run(final ReviewDb db) throws OrmException, Failure {
+          final String cvsUserTrimmed = cvsUser.trim();
+          if (!USER_NAME_PATTERN.matcher(cvsUserTrimmed).matches()) {
+            throw new Failure(new InvalidUserNameException());
+          }
+          if (!sshPrivateKey.contains("PRIVATE KEY")) {
+            throw new Failure(new InvalidSshPrivateKeyException());
+          }
+          //StringUtils.isAlphanumeric(cvsUser);
+          final Account.Id me = user.get().getAccountId();
+          final AccountCvsCredentials cvscred = new AccountCvsCredentials(me, sshPrivateKey, cvsUserTrimmed);
+          db.accountCvsCredentials().upsert(Collections.singleton(cvscred));
+          return cvscred;
+        }
+      });
   }
 }
