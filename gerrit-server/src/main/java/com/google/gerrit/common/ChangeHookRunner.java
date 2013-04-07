@@ -192,6 +192,8 @@ public class ChangeHookRunner implements ChangeHooks, LifecycleListener {
     /** Filename of the update hook. */
     private final File refUpdateHook;
 
+    private final File cvsPushHook;
+
     private final String anonymousCowardName;
 
     /** Repository Manager. */
@@ -256,6 +258,7 @@ public class ChangeHookRunner implements ChangeHooks, LifecycleListener {
         reviewerAddedHook = sitePath.resolve(new File(hooksPath, getValue(config, "hooks", "reviewerAddedHook", "reviewer-added")).getPath());
         claSignedHook = sitePath.resolve(new File(hooksPath, getValue(config, "hooks", "claSignedHook", "cla-signed")).getPath());
         refUpdateHook = sitePath.resolve(new File(hooksPath, getValue(config, "hooks", "refUpdateHook", "ref-update")).getPath());
+        cvsPushHook = sitePath.resolve(new File(hooksPath, getValue(config, "hooks", "cvsPushHook", "cvs-push")).getPath());
         syncHookTimeout = config.getInt("hooks", "syncHookTimeout", 30);
     }
 
@@ -321,6 +324,35 @@ public class ChangeHookRunner implements ChangeHooks, LifecycleListener {
 
       try {
         hookResult = runSyncHook(project.getNameKey(), refUpdateHook, args);
+      } catch (TimeoutException e) {
+        hookResult = new HookResult(-1, "Synchronous hook timed out");
+      }
+
+      return hookResult;
+    }
+
+  public HookResult doCvsPushHook(final Project.NameKey project, final String repoPath,
+      final String refname, final Account submitter, final String cvsUser,
+      final String cvsSshPrivateKey, final ObjectId oldId, final ObjectId newId) {
+
+      String submitterIdent = (submitter.getFullName() == null) ? anonymousCowardName : submitter.getFullName();
+      if (submitter.getPreferredEmail() != null)
+                submitterIdent += " <" + submitter.getPreferredEmail() + ">";
+
+      final List<String> args = new ArrayList<String>();
+      addArg(args, "--project", project.get());
+      addArg(args, "--repopath", repoPath);
+      addArg(args, "--refname", refname);
+      addArg(args, "--submitter", submitterIdent);
+      addArg(args, "--oldrev", oldId.getName());
+      addArg(args, "--newrev", newId.getName());
+      addArg(args, "--cvsuser", cvsUser);
+      addArg(args, "--cvskey", cvsSshPrivateKey);
+
+      HookResult hookResult;
+
+      try {
+        hookResult = runSyncHook(project, cvsPushHook, args);
       } catch (TimeoutException e) {
         hookResult = new HookResult(-1, "Synchronous hook timed out");
       }

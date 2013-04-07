@@ -99,4 +99,11 @@ public final class DisabledChangeHooks implements ChangeHooks {
       Account uploader, ObjectId oldId, ObjectId newId) {
     return null;
   }
+
+  @Override
+  public HookResult doCvsPushHook(Project.NameKey project, String repoPath,
+      String refname, Account submitter, String cvsUser,
+      String cvsSshPrivateKey, ObjectId oldId, ObjectId newId) {
+    return null;
+  }
 }

@@ -14,12 +14,15 @@
 
 package com.google.gerrit.server.git;
 
+import com.google.gerrit.common.ChangeHookRunner.HookResult;
+import com.google.gerrit.common.ChangeHooks;
 import com.google.gerrit.reviewdb.client.Account;
 import com.google.gerrit.reviewdb.client.AccountCvsCredentials;
 import com.google.gerrit.reviewdb.client.Change;
 import com.google.gerrit.reviewdb.client.ChangeMessage;
 import com.google.gerrit.reviewdb.client.PatchSet;
 import com.google.gerrit.reviewdb.client.PatchSetApproval;
+import com.google.gerrit.reviewdb.client.Project;
 import com.google.gerrit.server.ChangeUtil;
 import com.google.gwtorm.server.OrmException;
 import com.google.gwtorm.server.ResultSet;
@@ -44,17 +47,20 @@ import org.slf4j.LoggerFactory;
 
 public class FastForwardOnly extends SubmitStrategy {
   private final Pattern odtpattern;
+  private final ChangeHooks hooks;
 
-  FastForwardOnly(final SubmitStrategy.Arguments args) {
+  FastForwardOnly(final SubmitStrategy.Arguments args, final ChangeHooks hooks) {
     super(args);
 
     this.odtpattern = Pattern.compile("ODT: ([a-zA-Z][0-9]*)");
+    this.hooks = hooks;
   }
 
   @Override
   protected CodeReviewCommit _run(final CodeReviewCommit mergeTip,
       final List<CodeReviewCommit> toMerge) throws MergeException {
-    final List<CodeReviewCommit> allPending = new ArrayList<CodeReviewCommit>(toMerge);
+    final List<CodeReviewCommit> allPending =
+        new ArrayList<CodeReviewCommit>(toMerge);
 
     args.mergeUtil.reduceToMinimalMerge(args.mergeSorter, toMerge);
     CodeReviewCommit newMergeTip =
@@ -76,10 +82,10 @@ public class FastForwardOnly extends SubmitStrategy {
   }
 
   private CodeReviewCommit findReviewCommit(
-      final List<CodeReviewCommit> commits, final ObjectId id) throws MissingObjectException {
+      final List<CodeReviewCommit> commits, final ObjectId id)
+      throws MissingObjectException {
     for (final CodeReviewCommit rc : commits) {
-      if (rc.getId().equals(id))
-        return rc;
+      if (rc.getId().equals(id)) return rc;
     }
     throw new MissingObjectException(id, "commit");
   }
@@ -100,6 +106,7 @@ public class FastForwardOnly extends SubmitStrategy {
 
     try {
       args.db.changeMessages().insert(Collections.singleton(m));
+      args.db.commit();
     } catch (OrmException err) {
       log.warn("Cannot record merge failure message", err);
     }
@@ -113,13 +120,14 @@ public class FastForwardOnly extends SubmitStrategy {
     String commit = newMergeTip.getId().getName();
 
     if (parent.equals(commit)) {
-        return newMergeTip;
+      return newMergeTip;
     }
 
     Logger log = LoggerFactory.getLogger(FastForwardOnly.class);
 
     for (final CodeReviewCommit rc : allPending) {
-        log.info("all pending: " + rc.getName() + " patchsetid: " + rc.patchsetId.toString());
+      log.info("all pending: " + rc.getName() + " patchsetid: "
+          + rc.patchsetId.toString());
     }
 
     RevWalk rw = new RevWalk(args.repo);
@@ -140,12 +148,11 @@ public class FastForwardOnly extends SubmitStrategy {
           if (lastMerged.getId().equals(mergeTip.getId())) {
             fail = true;
             // FIXME: change on cvs push failed
-            //rc.statusCode = CommitMergeStatus.NOT_FAST_FORWARD;
+            // rc.statusCode = CommitMergeStatus.NOT_FAST_FORWARD;
           }
-        }
-        else {
+        } else {
           // TODO: what to do with left patches on failed merge?
-          //rc.statusCode = CommitMergeStatus.MISSING_DEPENDENCY;
+          // rc.statusCode = CommitMergeStatus.MISSING_DEPENDENCY;
         }
       }
     } catch (MissingObjectException e1) {
@@ -159,37 +166,32 @@ public class FastForwardOnly extends SubmitStrategy {
     return lastMerged;
   }
 
-  private final String matchODT(final String msg)
-  {
+  private final String matchODT(final String msg) {
     Logger log = LoggerFactory.getLogger(FastForwardOnly.class);
     String ticket = null;
     Matcher match = odtpattern.matcher(msg);
     if (match.find()) {
       ticket = match.group(1);
       log.info("matchODT: '" + msg + "' matches: '" + ticket + "'");
-    }
-    else {
+    } else {
       log.info("matchODT: '" + msg + "' no match");
     }
     return ticket;
   }
 
-  private final String findODT(final CodeReviewCommit c)
-  {
+  private final String findODT(final CodeReviewCommit c) {
     String ticket = null;
     String match;
 
     match = matchODT(c.getFullMessage());
-    if (match != null)
-      ticket = match;
+    if (match != null) ticket = match;
 
     try {
       ResultSet<ChangeMessage> messages =
           args.db.changeMessages().byChange(c.change.getId());
       for (ChangeMessage cm : messages) {
         match = matchODT(cm.getMessage());
-        if (match != null)
-          ticket = match;
+        if (match != null) ticket = match;
       }
     } catch (OrmException e) {
       e.printStackTrace();
@@ -209,6 +211,7 @@ public class FastForwardOnly extends SubmitStrategy {
     String ident = psApproval.getAccountId().toString();
     Account.Id submitterId = psApproval.getAccountId();
     String branch = args.destBranch.get();
+    Project.NameKey projNameKey = args.destBranch.getParentKey();
     String project = args.destBranch.getParentKey().get();
     String repoPath = args.repo.getDirectory().getAbsolutePath();
     AccountCvsCredentials cvscred;
@@ -222,8 +225,8 @@ public class FastForwardOnly extends SubmitStrategy {
         return mergeTip;
       }
     } catch (OrmException e) {
-        newMergeTip.statusCode = CommitMergeStatus.NO_CVS_CREDENTIALS;
-        return mergeTip;
+      newMergeTip.statusCode = CommitMergeStatus.NO_CVS_CREDENTIALS;
+      return mergeTip;
     }
 
     String cvsUser = cvscred.getCvsUser();
@@ -249,42 +252,58 @@ public class FastForwardOnly extends SubmitStrategy {
     argv[9] = account.getFullName();
     argv[10] = account.getPreferredEmail();
 
-    addChangeMessage(newMergeTip.change, "going to merge: " + commit + " to: " + odtTicket + " as cvs user: " + cvsUser);
+    addChangeMessage(newMergeTip.change, "going to merge: " + commit + " to: "
+        + odtTicket + " as cvs user: " + cvsUser);
+
+    HookResult result =
+        hooks.doCvsPushHook(projNameKey, repoPath, branch, account, cvsUser,
+            cvsSshPrivateKey, mergeTip.getId(), newMergeTip.getId());
+
+    if (result != null) {
+      String message = result.toString().trim();
+
+      if (result.getExitValue() != 0) {
+        message += "cvs-push rc: " + Integer.toString(result.getExitValue());
+        addChangeMessage(newMergeTip.change, message);
+        newMergeTip.statusCode = CommitMergeStatus.CVS_PUSH_FAILED;
+        return mergeTip;
+      } else if (!message.isEmpty()) {
+        addChangeMessage(newMergeTip.change, message);
+      }
+    } else {
+      addChangeMessage(newMergeTip.change, "Could not run CVS push hook.");
+      newMergeTip.statusCode = CommitMergeStatus.CVS_PUSH_FAILED;
+      return mergeTip;
+    }
 
     newMergeTip.statusCode = CommitMergeStatus.CVS_PUSH_FAILED;
     return mergeTip;
 
-//    log.info("commit: " + commit + " message: " + newMergeTip.getFullMessage());
-//    try {
-//      ResultSet<ChangeMessage> messages =
-//          args.db.changeMessages().byChange(newMergeTip.change.getId());
-//      for (ChangeMessage cm : messages) {
-//        log.info("commit: " + commit + " change message: " + cm.getMessage());
-//      }
-//    } catch (OrmException e) {
-//      e.printStackTrace();
-//    }
-/*
-    int rc = 0;
-    try {
-      String line;
-      Process p = Runtime.getRuntime().exec(argv);
-      BufferedReader input =
-          new BufferedReader(new InputStreamReader(p.getInputStream()));
-      while ((line = input.readLine()) != null) {
-        log.info("cvs committer: " + line);
-      }
-      input.close();
-      rc = p.waitFor();
-    } catch (Exception err) {
-      err.printStackTrace();
-    }
-
-    if (rc != 0) {
-
-    }
-
-    return newMergeTip;*/
+    // log.info("commit: " + commit + " message: " +
+    // newMergeTip.getFullMessage());
+    // try {
+    // ResultSet<ChangeMessage> messages =
+    // args.db.changeMessages().byChange(newMergeTip.change.getId());
+    // for (ChangeMessage cm : messages) {
+    // log.info("commit: " + commit + " change message: " + cm.getMessage());
+    // }
+    // } catch (OrmException e) {
+    // e.printStackTrace();
+    // }
+    /*
+     * int rc = 0; try { String line; Process p =
+     * Runtime.getRuntime().exec(argv); BufferedReader input = new
+     * BufferedReader(new InputStreamReader(p.getInputStream())); while ((line =
+     * input.readLine()) != null) { log.info("cvs committer: " + line); }
+     * input.close(); rc = p.waitFor(); } catch (Exception err) {
+     * err.printStackTrace(); }
+     *
+     * if (rc != 0) {
+     *
+     * }
+     *
+     * return newMergeTip;
+     */
   }
 
   @Override

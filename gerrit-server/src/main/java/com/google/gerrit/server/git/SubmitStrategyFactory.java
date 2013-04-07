@@ -14,6 +14,7 @@
 
 package com.google.gerrit.server.git;
 
+import com.google.gerrit.common.ChangeHooks;
 import com.google.gerrit.reviewdb.client.Branch;
 import com.google.gerrit.reviewdb.client.Project.SubmitType;
 import com.google.gerrit.reviewdb.server.ReviewDb;
@@ -76,7 +77,7 @@ public class SubmitStrategyFactory {
   public SubmitStrategy create(final SubmitType submitType, final ReviewDb db,
       final Repository repo, final RevWalk rw, final ObjectInserter inserter,
       final RevFlag canMergeFlag, final Set<RevCommit> alreadyAccepted,
-      final Branch.NameKey destBranch)
+      final Branch.NameKey destBranch, final ChangeHooks hooks)
       throws MergeException, NoSuchProjectException {
     ProjectState project = getProject(destBranch);
     final SubmitStrategy.Arguments args =
@@ -87,7 +88,7 @@ public class SubmitStrategyFactory {
       case CHERRY_PICK:
         return new CherryPick(args, patchSetInfoFactory, gitRefUpdated);
       case FAST_FORWARD_ONLY:
-        return new FastForwardOnly(args);
+        return new FastForwardOnly(args, hooks);
       case MERGE_ALWAYS:
         return new MergeAlways(args);
       case MERGE_IF_NECESSARY:
