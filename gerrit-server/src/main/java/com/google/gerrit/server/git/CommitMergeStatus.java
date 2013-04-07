@@ -68,6 +68,11 @@ enum CommitMergeStatus {
                   + "When you submit changes to this branch they are also committed to CVS.\n"
                   + "Submitter should configure CVS username and Key in gerrit acount options CVS Integration section."),
 
+  NO_ODT_TICKET("Cannot merge the change, because no ODT ticket was specified.\n"
+                  + "Please add change comment with ticket number in format 'ODT: <ticket number>' or add it in commit message."),
+
+  CVS_PUSH_FAILED("Could not merge the change to CVS. See previous change message for details."),
+
   /** */
   INVALID_PROJECT_CONFIGURATION("Change contains an invalid project configuration."),
 

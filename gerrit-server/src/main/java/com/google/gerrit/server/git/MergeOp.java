@@ -747,6 +747,8 @@ public class MergeOp {
           case INVALID_PROJECT_CONFIGURATION_ROOT_PROJECT_CANNOT_HAVE_PARENT:
           case SETTING_PARENT_PROJECT_ONLY_ALLOWED_BY_ADMIN:
           case NO_CVS_CREDENTIALS:
+          case NO_ODT_TICKET:
+          case CVS_PUSH_FAILED:
             setNew(c, message(c, txt));
             break;
 

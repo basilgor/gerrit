@@ -22,6 +22,7 @@ import com.google.gerrit.reviewdb.client.PatchSet;
 import com.google.gerrit.reviewdb.client.PatchSetApproval;
 import com.google.gerrit.server.ChangeUtil;
 import com.google.gwtorm.server.OrmException;
+import com.google.gwtorm.server.ResultSet;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,6 +30,8 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.MissingObjectException;
@@ -40,9 +43,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class FastForwardOnly extends SubmitStrategy {
+  private final Pattern odtpattern;
 
   FastForwardOnly(final SubmitStrategy.Arguments args) {
     super(args);
+
+    this.odtpattern = Pattern.compile("ODT: ([a-zA-Z][0-9]*)");
   }
 
   @Override
@@ -124,11 +130,23 @@ public class FastForwardOnly extends SubmitStrategy {
       rw.sort(RevSort.REVERSE, true);
       RevCommit c;
       CodeReviewCommit rc;
+      boolean fail = false;
 
       while ((c = rw.next()) != null) {
         log.info("pending commit: " + c.name());
         rc = findReviewCommit(allPending, c.getId());
-        lastMerged = pushOneToCvs(lastMerged, rc);
+        if (!fail) {
+          lastMerged = pushOneToCvs(mergeTip, rc);
+          if (lastMerged.getId().equals(mergeTip.getId())) {
+            fail = true;
+            // FIXME: change on cvs push failed
+            //rc.statusCode = CommitMergeStatus.NOT_FAST_FORWARD;
+          }
+        }
+        else {
+          // TODO: what to do with left patches on failed merge?
+          //rc.statusCode = CommitMergeStatus.MISSING_DEPENDENCY;
+        }
       }
     } catch (MissingObjectException e1) {
       e1.printStackTrace();
@@ -139,6 +157,44 @@ public class FastForwardOnly extends SubmitStrategy {
     }
 
     return lastMerged;
+  }
+
+  private final String matchODT(final String msg)
+  {
+    Logger log = LoggerFactory.getLogger(FastForwardOnly.class);
+    String ticket = null;
+    Matcher match = odtpattern.matcher(msg);
+    if (match.find()) {
+      ticket = match.group(1);
+      log.info("matchODT: '" + msg + "' matches: '" + ticket + "'");
+    }
+    else {
+      log.info("matchODT: '" + msg + "' no match");
+    }
+    return ticket;
+  }
+
+  private final String findODT(final CodeReviewCommit c)
+  {
+    String ticket = null;
+    String match;
+
+    match = matchODT(c.getFullMessage());
+    if (match != null)
+      ticket = match;
+
+    try {
+      ResultSet<ChangeMessage> messages =
+          args.db.changeMessages().byChange(c.change.getId());
+      for (ChangeMessage cm : messages) {
+        match = matchODT(cm.getMessage());
+        if (match != null)
+          ticket = match;
+      }
+    } catch (OrmException e) {
+      e.printStackTrace();
+    }
+    return ticket;
   }
 
   private CodeReviewCommit pushOneToCvs(final CodeReviewCommit mergeTip,
@@ -172,6 +228,11 @@ public class FastForwardOnly extends SubmitStrategy {
 
     String cvsUser = cvscred.getCvsUser();
     String cvsSshPrivateKey = cvscred.getSshPrivateKey();
+    String odtTicket = findODT(newMergeTip);
+    if (odtTicket == null) {
+      newMergeTip.statusCode = CommitMergeStatus.NO_ODT_TICKET;
+      return mergeTip;
+    }
 
     log.info("cvs committer, going to merge: " + commit + " into: " + branch);
 
@@ -188,8 +249,22 @@ public class FastForwardOnly extends SubmitStrategy {
     argv[9] = account.getFullName();
     argv[10] = account.getPreferredEmail();
 
-    addChangeMessage(newMergeTip.change, "going to merge ass cvs user: " + cvsUser);
+    addChangeMessage(newMergeTip.change, "going to merge: " + commit + " to: " + odtTicket + " as cvs user: " + cvsUser);
 
+    newMergeTip.statusCode = CommitMergeStatus.CVS_PUSH_FAILED;
+    return mergeTip;
+
+//    log.info("commit: " + commit + " message: " + newMergeTip.getFullMessage());
+//    try {
+//      ResultSet<ChangeMessage> messages =
+//          args.db.changeMessages().byChange(newMergeTip.change.getId());
+//      for (ChangeMessage cm : messages) {
+//        log.info("commit: " + commit + " change message: " + cm.getMessage());
+//      }
+//    } catch (OrmException e) {
+//      e.printStackTrace();
+//    }
+/*
     int rc = 0;
     try {
       String line;
@@ -209,7 +284,7 @@ public class FastForwardOnly extends SubmitStrategy {
 
     }
 
-    return newMergeTip;
+    return newMergeTip;*/
   }
 
   @Override
