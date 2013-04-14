@@ -27,9 +27,7 @@ import com.google.gerrit.server.ChangeUtil;
 import com.google.gwtorm.server.OrmException;
 import com.google.gwtorm.server.ResultSet;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -276,34 +274,7 @@ public class FastForwardOnly extends SubmitStrategy {
       return mergeTip;
     }
 
-    newMergeTip.statusCode = CommitMergeStatus.CVS_PUSH_FAILED;
-    return mergeTip;
-
-    // log.info("commit: " + commit + " message: " +
-    // newMergeTip.getFullMessage());
-    // try {
-    // ResultSet<ChangeMessage> messages =
-    // args.db.changeMessages().byChange(newMergeTip.change.getId());
-    // for (ChangeMessage cm : messages) {
-    // log.info("commit: " + commit + " change message: " + cm.getMessage());
-    // }
-    // } catch (OrmException e) {
-    // e.printStackTrace();
-    // }
-    /*
-     * int rc = 0; try { String line; Process p =
-     * Runtime.getRuntime().exec(argv); BufferedReader input = new
-     * BufferedReader(new InputStreamReader(p.getInputStream())); while ((line =
-     * input.readLine()) != null) { log.info("cvs committer: " + line); }
-     * input.close(); rc = p.waitFor(); } catch (Exception err) {
-     * err.printStackTrace(); }
-     *
-     * if (rc != 0) {
-     *
-     * }
-     *
-     * return newMergeTip;
-     */
+    return newMergeTip;
   }
 
   @Override
