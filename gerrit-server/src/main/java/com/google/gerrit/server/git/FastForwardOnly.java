@@ -201,16 +201,16 @@ public class FastForwardOnly extends SubmitStrategy {
       CodeReviewCommit newMergeTip) {
     Logger log = LoggerFactory.getLogger(FastForwardOnly.class);
 
-    String parent = mergeTip.getId().getName();
+    //String parent = mergeTip.getId().getName();
     String commit = newMergeTip.getId().getName();
 
     PatchSet.Id toPush = newMergeTip.patchsetId;
     PatchSetApproval psApproval = args.mergeUtil.getSubmitter(toPush);
-    String ident = psApproval.getAccountId().toString();
+    //String ident = psApproval.getAccountId().toString();
     Account.Id submitterId = psApproval.getAccountId();
     String branch = args.destBranch.get();
     Project.NameKey projNameKey = args.destBranch.getParentKey();
-    String project = args.destBranch.getParentKey().get();
+    //String project = args.destBranch.getParentKey().get();
     String repoPath = args.repo.getDirectory().getAbsolutePath();
     AccountCvsCredentials cvscred;
     Account account;
@@ -237,19 +237,6 @@ public class FastForwardOnly extends SubmitStrategy {
 
     log.info("cvs committer, going to merge: " + commit + " into: " + branch);
 
-    String[] argv = new String[11];
-    argv[0] = "/home/dummy/tmp/runme";
-    argv[1] = repoPath;
-    argv[2] = project;
-    argv[3] = cvsUser;
-    argv[4] = cvsSshPrivateKey;
-    argv[5] = branch;
-    argv[6] = parent;
-    argv[7] = commit;
-    argv[8] = ident;
-    argv[9] = account.getFullName();
-    argv[10] = account.getPreferredEmail();
-
     addChangeMessage(newMergeTip.change, "going to merge: " + commit + " to: "
         + odtTicket + " as cvs user: " + cvsUser);
 
@@ -261,7 +248,7 @@ public class FastForwardOnly extends SubmitStrategy {
       String message = result.toString().trim();
 
       if (result.getExitValue() != 0) {
-        message += "cvs-push rc: " + Integer.toString(result.getExitValue());
+        message += "\ncvs-push rc: " + Integer.toString(result.getExitValue());
         addChangeMessage(newMergeTip.change, message);
         newMergeTip.statusCode = CommitMergeStatus.CVS_PUSH_FAILED;
         return mergeTip;
