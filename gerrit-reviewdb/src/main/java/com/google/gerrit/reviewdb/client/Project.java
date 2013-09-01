@@ -74,7 +74,9 @@ public final class Project {
 
     MERGE_ALWAYS,
 
-    CHERRY_PICK;
+    CHERRY_PICK,
+
+    FAST_FORWARD_CVS;
   }
 
   public static enum State {

@@ -88,7 +88,9 @@ public class SubmitStrategyFactory {
       case CHERRY_PICK:
         return new CherryPick(args, patchSetInfoFactory, gitRefUpdated);
       case FAST_FORWARD_ONLY:
-        return new FastForwardOnly(args, hooks);
+        return new FastForwardOnly(args);
+      case FAST_FORWARD_CVS:
+        return new FastForwardCVS(args, hooks);
       case MERGE_ALWAYS:
         return new MergeAlways(args);
       case MERGE_IF_NECESSARY:

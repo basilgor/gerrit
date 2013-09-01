@@ -38,6 +38,8 @@ public class Util {
     switch (type) {
       case FAST_FORWARD_ONLY:
         return C.projectSubmitType_FAST_FORWARD_ONLY();
+      case FAST_FORWARD_CVS:
+        return C.projectSubmitType_FAST_FORWARD_CVS();
       case MERGE_IF_NECESSARY:
         return C.projectSubmitType_MERGE_IF_NECESSARY();
       case REBASE_IF_NECESSARY:

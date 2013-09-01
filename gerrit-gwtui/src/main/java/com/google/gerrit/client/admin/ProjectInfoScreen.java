@@ -178,6 +178,8 @@ public class ProjectInfoScreen extends ProjectScreen {
    */
   private void setEnabledForUseContentMerge() {
     if (SubmitType.FAST_FORWARD_ONLY.equals(Project.SubmitType
+        .valueOf(submitType.getValue(submitType.getSelectedIndex()))) ||
+        SubmitType.FAST_FORWARD_CVS.equals(Project.SubmitType
         .valueOf(submitType.getValue(submitType.getSelectedIndex())))) {
       contentMerge.setEnabled(false);
       final InheritedBoolean inheritedBoolean = new InheritedBoolean();

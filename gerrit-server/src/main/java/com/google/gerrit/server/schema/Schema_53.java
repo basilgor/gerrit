@@ -213,6 +213,9 @@ class Schema_53 extends SchemaVersion {
       case 'F':
         project.setSubmitType(Project.SubmitType.FAST_FORWARD_ONLY);
         break;
+      case 'S':
+        project.setSubmitType(Project.SubmitType.FAST_FORWARD_CVS);
+        break;
       case 'M':
         project.setSubmitType(Project.SubmitType.MERGE_IF_NECESSARY);
         break;

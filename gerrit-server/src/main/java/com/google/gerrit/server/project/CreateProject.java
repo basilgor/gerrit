@@ -111,10 +111,12 @@ class CreateProject implements RestModifyView<TopLevelResource, Input> {
             InheritableBoolean.INHERIT);
     args.signedOffBy =
         Objects.firstNonNull(input.useSignedOffBy, InheritableBoolean.INHERIT);
-    args.contentMerge =
-        input.submitType == SubmitType.FAST_FORWARD_ONLY
-            ? InheritableBoolean.FALSE : Objects.firstNonNull(
-                input.useContentMerge, InheritableBoolean.INHERIT);
+    if (input.submitType == SubmitType.FAST_FORWARD_ONLY ||
+        input.submitType == SubmitType.FAST_FORWARD_CVS) {
+        args.contentMerge = InheritableBoolean.FALSE;
+    } else {
+        args.contentMerge = Objects.firstNonNull(input.useContentMerge, InheritableBoolean.INHERIT);
+    }
     args.changeIdRequired =
         Objects.firstNonNull(input.requireChangeId, InheritableBoolean.INHERIT);
 
