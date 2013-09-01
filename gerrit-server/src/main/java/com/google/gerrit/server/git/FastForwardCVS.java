@@ -69,7 +69,9 @@ public class FastForwardCVS extends SubmitStrategy {
       n.statusCode = CommitMergeStatus.NOT_FAST_FORWARD;
     }
 
-    newMergeTip = pushToCvs(mergeTip, newMergeTip, allPending);
+    if (!hasBranchPrefix(args.destBranch.get())) {
+      newMergeTip = pushToCvs(mergeTip, newMergeTip, allPending);
+    }
 
     final PatchSetApproval submitApproval =
         args.mergeUtil.markCleanMerges(args.rw, args.canMergeFlag, newMergeTip,
@@ -77,6 +79,20 @@ public class FastForwardCVS extends SubmitStrategy {
     setRefLogIdent(submitApproval);
 
     return newMergeTip;
+  }
+
+  private boolean hasBranchPrefix(final String fullRef) {
+    final String refsPrefix = "refs/heads/";
+    String branch;
+
+    if (!fullRef.startsWith(refsPrefix))
+        return true;
+
+    branch = fullRef.substring(refsPrefix.length());
+    if (branch.indexOf('/') != -1)
+        return true;
+
+    return false;
   }
 
   private CodeReviewCommit findReviewCommit(
