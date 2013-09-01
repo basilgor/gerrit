@@ -50,7 +50,7 @@ public class FastForwardOnly extends SubmitStrategy {
   FastForwardOnly(final SubmitStrategy.Arguments args, final ChangeHooks hooks) {
     super(args);
 
-    this.odtpattern = Pattern.compile("ODT: ([a-zA-Z][0-9]*)");
+    this.odtpattern = Pattern.compile("TICKET:\\s?([0-9]*)");
     this.hooks = hooks;
   }
 
@@ -164,31 +164,31 @@ public class FastForwardOnly extends SubmitStrategy {
     return lastMerged;
   }
 
-  private final String matchODT(final String msg) {
+  private final String matchTicket(final String msg) {
     Logger log = LoggerFactory.getLogger(FastForwardOnly.class);
     String ticket = null;
     Matcher match = odtpattern.matcher(msg);
     if (match.find()) {
       ticket = match.group(1);
-      log.info("matchODT: '" + msg + "' matches: '" + ticket + "'");
+      log.info("matchTicket: '" + msg + "' matches: '" + ticket + "'");
     } else {
-      log.info("matchODT: '" + msg + "' no match");
+      log.info("matchTicket: '" + msg + "' no match");
     }
     return ticket;
   }
 
-  private final String findODT(final CodeReviewCommit c) {
+  private final String findTicket(final CodeReviewCommit c) {
     String ticket = null;
     String match;
 
-    match = matchODT(c.getFullMessage());
+    match = matchTicket(c.getFullMessage());
     if (match != null) ticket = match;
 
     try {
       ResultSet<ChangeMessage> messages =
           args.db.changeMessages().byChange(c.change.getId());
       for (ChangeMessage cm : messages) {
-        match = matchODT(cm.getMessage());
+        match = matchTicket(cm.getMessage());
         if (match != null) ticket = match;
       }
     } catch (OrmException e) {
@@ -229,16 +229,16 @@ public class FastForwardOnly extends SubmitStrategy {
 
     String cvsUser = cvscred.getCvsUser();
     String cvsSshPrivateKey = cvscred.getSshPrivateKey();
-    String odtTicket = findODT(newMergeTip);
-    if (odtTicket == null) {
-      newMergeTip.statusCode = CommitMergeStatus.NO_ODT_TICKET;
+    String ticket = findTicket(newMergeTip);
+    if (ticket == null) {
+      newMergeTip.statusCode = CommitMergeStatus.NO_TICKET;
       return mergeTip;
     }
 
     log.info("cvs committer, going to merge: " + commit + " into: " + branch);
 
     addChangeMessage(newMergeTip.change, "going to merge: " + commit + " to: "
-        + odtTicket + " as cvs user: " + cvsUser);
+        + ticket + " as cvs user: " + cvsUser);
 
     HookResult result =
         hooks.doCvsPushHook(projNameKey, repoPath, branch, account, cvsUser,
