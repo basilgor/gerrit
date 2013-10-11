@@ -44,13 +44,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class FastForwardCVS extends SubmitStrategy {
-  private final Pattern odtpattern;
+  private final Pattern ticketPattern;
   private final ChangeHooks hooks;
 
   FastForwardCVS(final SubmitStrategy.Arguments args, final ChangeHooks hooks) {
     super(args);
 
-    this.odtpattern = Pattern.compile("TICKET:\\s?([0-9]*)");
+    this.ticketPattern = Pattern.compile("TICKET:\\s?([0-9]+)");
     this.hooks = hooks;
   }
 
@@ -183,13 +183,14 @@ public class FastForwardCVS extends SubmitStrategy {
   private final String matchTicket(final String msg) {
     Logger log = LoggerFactory.getLogger(FastForwardCVS.class);
     String ticket = null;
-    Matcher match = odtpattern.matcher(msg);
+    Matcher match = ticketPattern.matcher(msg);
     if (match.find()) {
       ticket = match.group(1);
       log.info("matchTicket: '" + msg + "' matches: '" + ticket + "'");
-    } else {
-      log.info("matchTicket: '" + msg + "' no match");
     }
+    //else {
+    //  log.info("matchTicket: '" + msg + "' no match");
+    //}
     return ticket;
   }
 
