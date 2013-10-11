@@ -221,6 +221,7 @@ public class FastForwardCVS extends SubmitStrategy {
     String commit = newMergeTip.getId().getName();
 
     PatchSet.Id toPush = newMergeTip.patchsetId;
+    String changeRefName = toPush.toRefName();
     PatchSetApproval psApproval = args.mergeUtil.getSubmitter(toPush);
     //String ident = psApproval.getAccountId().toString();
     Account.Id submitterId = psApproval.getAccountId();
@@ -257,7 +258,7 @@ public class FastForwardCVS extends SubmitStrategy {
         + ticket + " as cvs user: " + cvsUser);
 
     HookResult result =
-        hooks.doCvsPushHook(projNameKey, repoPath, branch, account, cvsUser,
+        hooks.doCvsPushHook(projNameKey, repoPath, changeRefName, branch, account, cvsUser,
             cvsSshPrivateKey, mergeTip.getId(), newMergeTip.getId());
 
     if (result != null) {
