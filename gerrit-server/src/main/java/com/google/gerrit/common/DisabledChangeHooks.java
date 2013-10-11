@@ -102,8 +102,8 @@ public final class DisabledChangeHooks implements ChangeHooks {
 
   @Override
   public HookResult doCvsPushHook(Project.NameKey project, String repoPath,
-      String refname, String targetBranch, Account submitter, String cvsUser,
-      String cvsSshPrivateKey, ObjectId oldId, ObjectId newId) {
+      String refname, String targetBranch, String ticket, Account submitter,
+      String cvsUser, String cvsSshPrivateKey, ObjectId oldId, ObjectId newId) {
     return null;
   }
 }

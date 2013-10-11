@@ -258,8 +258,8 @@ public class FastForwardCVS extends SubmitStrategy {
         + ticket + " as cvs user: " + cvsUser);
 
     HookResult result =
-        hooks.doCvsPushHook(projNameKey, repoPath, changeRefName, branch, account, cvsUser,
-            cvsSshPrivateKey, mergeTip.getId(), newMergeTip.getId());
+        hooks.doCvsPushHook(projNameKey, repoPath, changeRefName, branch, ticket,
+                account, cvsUser, cvsSshPrivateKey, mergeTip.getId(), newMergeTip.getId());
 
     if (result != null) {
       String message = result.toString().trim();

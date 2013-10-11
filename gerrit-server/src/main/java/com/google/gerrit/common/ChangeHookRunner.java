@@ -332,8 +332,9 @@ public class ChangeHookRunner implements ChangeHooks, LifecycleListener {
     }
 
   public HookResult doCvsPushHook(final Project.NameKey project, final String repoPath,
-      final String refname, final String targetBranch, final Account submitter, final String cvsUser,
-      final String cvsSshPrivateKey, final ObjectId oldId, final ObjectId newId) {
+      final String refname, final String targetBranch, final String ticket,
+      final Account submitter, final String cvsUser, final String cvsSshPrivateKey,
+      final ObjectId oldId, final ObjectId newId) {
 
       String submitterIdent = (submitter.getFullName() == null) ? anonymousCowardName : submitter.getFullName();
       if (submitter.getPreferredEmail() != null)
@@ -344,6 +345,7 @@ public class ChangeHookRunner implements ChangeHooks, LifecycleListener {
       addArg(args, "--repopath", repoPath);
       addArg(args, "--refname", refname);
       addArg(args, "--forbranch", targetBranch);
+      addArg(args, "--ticket", ticket);
       addArg(args, "--submitter", submitterIdent);
       addArg(args, "--oldrev", oldId.getName());
       addArg(args, "--newrev", newId.getName());

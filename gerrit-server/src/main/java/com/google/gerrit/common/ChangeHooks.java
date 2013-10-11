@@ -163,6 +163,6 @@ public interface ChangeHooks {
        Account uploader, ObjectId oldId, ObjectId newId);
 
   public HookResult doCvsPushHook(Project.NameKey project, String repoPath,
-      String refname, String targetBranch, Account submitter, String cvsUser,
+      String refname, String targetBranch, String ticket, Account submitter, String cvsUser,
       String cvsSshPrivateKey, ObjectId oldId, ObjectId newId);
 }
