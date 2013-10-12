@@ -60,43 +60,4 @@ public final class AccountCvsCredentials {
   public void setCvsUser(final String user) {
     cvsUser = user;
   }
-
-  /*public String getAlgorithm() {
-    final String s = getSshPrivateKey();
-    if (s == null || s.length() == 0) {
-      return "none";
-    }
-
-    final String[] parts = s.split(" ");
-    if (parts.length < 1) {
-      return "none";
-    }
-    return parts[0];
-  }
-
-  public String getEncodedKey() {
-    final String s = getSshPrivateKey();
-    if (s == null || s.length() == 0) {
-      return null;
-    }
-
-    final String[] parts = s.split(" ");
-    if (parts.length < 2) {
-      return null;
-    }
-    return parts[1];
-  }
-
-  public String getComment() {
-    final String s = getSshPrivateKey();
-    if (s == null || s.length() == 0) {
-      return "";
-    }
-
-    final String[] parts = s.split(" ", 3);
-    if (parts.length < 3) {
-      return "";
-    }
-    return parts[2];
-  }*/
 }

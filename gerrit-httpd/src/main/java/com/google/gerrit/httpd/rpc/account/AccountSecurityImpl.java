@@ -364,7 +364,7 @@ class AccountSecurityImpl extends BaseServiceImplementation implements
           return db.accountCvsCredentials().get(currentUser);
         } catch (OrmException e) {
           return new AccountCvsCredentials(currentUser,
-              "enter you cvs username",
+              "enter your cvs username",
               "paste your private ssh key for cvs here");
         }
       }
